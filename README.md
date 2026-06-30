@@ -1,13 +1,15 @@
-# internal-tide-eddy-cascade
-Code for analyzing internal tide–eddy interactions and forward energy cascades in oceanic flows.
+# Internal Tide-Eddy Cascade
+
 Code and analysis for the paper "Internal tide-eddy interactions enhance the forward energy cascade of eddy flows".
 
-This repository contains the model configuration files, parallel structure-function calculation codes, data preprocessing scripts, analysis functions, and figure-generation scripts used in the study. The main workflow is designed to quantify how internal tide-eddy interactions modify flow structures and enhance the forward kinetic energy cascade in oceanic flows.
+This repository contains model experiment configurations, model-output post-processing scripts, parallel structure-function calculation codes, preprocessing scripts, analysis functions, and figure-generation scripts used in the study. The workflow is designed to quantify how internal tide-eddy interactions modify flow structures and enhance the forward kinetic energy cascade in oceanic flows.
 
 ## Repository structure
 
 - `model config/`
   - Model configuration files used for the numerical experiments.
+  - `model post processing/`
+    - Scripts for processing raw model output data before downstream analysis.
 
 - `SF calc python/`
   - Parallel Python codes for calculating structure functions on high-performance computing platforms.
@@ -33,7 +35,9 @@ This repository contains the model configuration files, parallel structure-funct
 
 ### `model config/`
 
-This directory contains the configuration files for the numerical model experiments used in the study.
+This directory contains the configuration files for the numerical model experiments used in the study, including parent and child model setups.
+
+The `model post processing/` folder contains scripts for processing model output data before the main analysis workflow. This step prepares model results for later preprocessing and diagnostics, keeping the raw model-output handling separate from the structure-function and spectral-analysis scripts.
 
 ### `SF calc python/`
 
@@ -85,12 +89,13 @@ This folder contains the plotting scripts used to generate the figures in the pa
 
 The general workflow of this repository is:
 
-1. Prepare model outputs and configuration files.
-2. Preprocess the model data, including coordinate interpolation, target-region extraction, and filtering.
-3. Calculate structure functions using the parallel codes in `SF calc python/`.
-4. Post-process the structure-function results and estimate uncertainties.
-5. Calculate spectral fluxes, cospectra, and related diagnostics.
-6. Generate the figures used in the paper.
+1. Prepare model configurations and model experiment outputs.
+2. Process raw model outputs using scripts in `model config/model post processing/`.
+3. Preprocess the model data, including coordinate interpolation, target-region extraction, and filtering.
+4. Calculate structure functions using the parallel codes in `SF calc python/`.
+5. Post-process the structure-function results and estimate uncertainties.
+6. Calculate spectral fluxes, cospectra, and related diagnostics.
+7. Generate the figures used in the paper.
 
 ## Notes
 
