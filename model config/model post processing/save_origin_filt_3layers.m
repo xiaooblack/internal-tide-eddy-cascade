@@ -1,0 +1,288 @@
+
+clear
+warning off all;  
+%read grid
+rmpath('E:\Roms_CROCO_source\croco_tools-v1.3\croco_tools-v1.3\UTILITIES\mask');% 使用原ncread函数
+grdname='F:\NCS_wu_7.5km\croco file_70layers\CROCO_FILES\croco_grd.nc.2';
+h=ncread(grdname,'h');f=ncread(grdname,'f');
+lon_rho= ncread(grdname,'lon_rho',[449 100],[1200 1200]);   lat_rho= ncread(grdname,'lat_rho',[449 100],[1200 1200]);   % X/Y rho  :km
+x_rho= ncread(grdname,'x_rho',[449 100],[1200 1200]);   y_rho= ncread(grdname,'y_rho',[449 100],[1200 1200]);   % X/Y rho  :km
+
+
+N= 70; theta_s= 5; theta_b= 1; hc= 50;vtransform= 2.;
+rho_r=1025;g=9.8;
+
+rpath1='F:\NCS_wu_0.5km_tide_hourly_output';
+filelist=dir(fullfile(rpath1,'*avg*.nc'));
+m1=length(filelist);
+z_need=[-17 -15 -13];
+
+% create nc file
+nccreate('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_tide_3layers_origin.nc','x_rho','Dimensions',{'x_rho',size(x_rho,1),'y_rho',size(x_rho,2)},'Datatype','single');
+nccreate('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_tide_3layers_origin.nc','y_rho','Dimensions',{'x_rho',size(x_rho,1),'y_rho',size(x_rho,2)},'Datatype','single');
+nccreate('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_tide_3layers_origin.nc','lon_rho','Dimensions',{'x_rho',size(x_rho,1),'y_rho',size(x_rho,2)},'Datatype','single');
+nccreate('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_tide_3layers_origin.nc','lat_rho','Dimensions',{'x_rho',size(x_rho,1),'y_rho',size(x_rho,2)},'Datatype','single');
+nccreate('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_tide_3layers_origin.nc','depth','Dimensions',{'depth',length(z_need)},'Datatype','single');
+ncwrite('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_tide_3layers_origin.nc','x_rho',single(x_rho),[1 1]);
+ncwrite('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_tide_3layers_origin.nc','y_rho',single(y_rho),[1 1]);
+ncwrite('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_tide_3layers_origin.nc','lon_rho',single(lon_rho),[1 1]);
+ncwrite('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_tide_3layers_origin.nc','lat_rho',single(lat_rho),[1 1]);
+ncwrite('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_tide_3layers_origin.nc','depth',single(z_need),[1]);
+nccreate('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_tide_3layers_origin.nc','u','Dimensions',{'x_rho',size(x_rho,1),'y_rho',size(x_rho,2),'depth',3,'t',695},'Datatype','single');
+nccreate('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_tide_3layers_origin.nc','v','Dimensions',{'x_rho',size(x_rho,1),'y_rho',size(x_rho,2),'depth',3,'t',695},'Datatype','single');
+nccreate('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_tide_3layers_origin.nc','w','Dimensions',{'x_rho',size(x_rho,1),'y_rho',size(x_rho,2),'depth',3,'t',695},'Datatype','single');
+
+
+step1=0;
+for ii=1:m1
+    step1=step1+1;
+    disp(['step =',num2str(step1)]);
+    disp(datestr(now, 'yyyy-mm-dd HH:MM:SS'));
+    filename=[filelist(ii).folder,'\',filelist(ii).name];  
+
+    u_u=ncread(filename,'u');
+    v_v=ncread(filename,'v');
+    for iii=1:size(u_u,3)
+        u_m1(:,:,iii)=v2rho_2d(u_u(:,:,iii));
+        v_m1(:,:,iii)=u2rho_2d(v_v(:,:,iii));
+    end
+    u_m=u_m1(449:1648,100:1299,:);v_m=v_m1(449:1648,100:1299,:);
+    w0=ncread(filename,'w',[449 100 1 1],[1200 1200 inf inf]);
+    zeta=ncread(filename,'zeta');
+    z_rho1=zlevs(h,zeta,theta_s,theta_b,hc,N,'r',vtransform);
+    z_rho=z_rho1(41:70,449:1648,100:1299);
+    z_rho=permute(z_rho,[2 3 1]);
+
+    u=interp_model_z(u_m,x_rho,y_rho,z_rho,z_need);
+    v=interp_model_z(v_m,x_rho,y_rho,z_rho,z_need);
+    w=interp_model_z(w0,x_rho,y_rho,z_rho,z_need);
+    % 
+    % write nc file
+    ncwrite('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_tide_3layers_origin.nc','u',single(u),[1 1 1 step1]);
+    ncwrite('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_tide_3layers_origin.nc','v',single(v),[1 1 1 step1]);
+    ncwrite('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_tide_3layers_origin.nc','w',single(w),[1 1 1 step1]);
+
+end
+
+
+
+clear
+warning off all;  
+%read grid
+rmpath('E:\Roms_CROCO_source\croco_tools-v1.3\croco_tools-v1.3\UTILITIES\mask');% 使用原ncread函数
+grdname='F:\NCS_wu_7.5km\croco file_70layers\CROCO_FILES\croco_grd.nc.2';
+h=ncread(grdname,'h');f=ncread(grdname,'f');
+lon_rho= ncread(grdname,'lon_rho',[449 100],[1200 1200]);   lat_rho= ncread(grdname,'lat_rho',[449 100],[1200 1200]);   % X/Y rho  :km
+x_rho= ncread(grdname,'x_rho',[449 100],[1200 1200]);   y_rho= ncread(grdname,'y_rho',[449 100],[1200 1200]);   % X/Y rho  :km
+
+
+N= 70; theta_s= 5; theta_b= 1; hc= 50;vtransform= 2.;
+rho_r=1025;g=9.8;
+
+rpath1='F:\NCS_wu_0.5km_notide_hourly_output';
+filelist=dir(fullfile(rpath1,'*avg*.nc'));
+m1=length(filelist);
+z_need=[-17 -15 -13];
+
+% create nc file
+nccreate('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_notide_3layers_origin.nc','x_rho','Dimensions',{'x_rho',size(x_rho,1),'y_rho',size(x_rho,2)},'Datatype','single');
+nccreate('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_notide_3layers_origin.nc','y_rho','Dimensions',{'x_rho',size(x_rho,1),'y_rho',size(x_rho,2)},'Datatype','single');
+nccreate('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_notide_3layers_origin.nc','lon_rho','Dimensions',{'x_rho',size(x_rho,1),'y_rho',size(x_rho,2)},'Datatype','single');
+nccreate('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_notide_3layers_origin.nc','lat_rho','Dimensions',{'x_rho',size(x_rho,1),'y_rho',size(x_rho,2)},'Datatype','single');
+nccreate('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_notide_3layers_origin.nc','depth','Dimensions',{'depth',length(z_need)},'Datatype','single');
+ncwrite('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_notide_3layers_origin.nc','x_rho',single(x_rho),[1 1]);
+ncwrite('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_notide_3layers_origin.nc','y_rho',single(y_rho),[1 1]);
+ncwrite('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_notide_3layers_origin.nc','lon_rho',single(lon_rho),[1 1]);
+ncwrite('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_notide_3layers_origin.nc','lat_rho',single(lat_rho),[1 1]);
+ncwrite('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_notide_3layers_origin.nc','depth',single(z_need),[1]);
+nccreate('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_notide_3layers_origin.nc','u','Dimensions',{'x_rho',size(x_rho,1),'y_rho',size(x_rho,2),'depth',3,'t',695},'Datatype','single');
+nccreate('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_notide_3layers_origin.nc','v','Dimensions',{'x_rho',size(x_rho,1),'y_rho',size(x_rho,2),'depth',3,'t',695},'Datatype','single');
+nccreate('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_notide_3layers_origin.nc','w','Dimensions',{'x_rho',size(x_rho,1),'y_rho',size(x_rho,2),'depth',3,'t',695},'Datatype','single');
+
+
+step1=0;
+for ii=1:m1
+    step1=step1+1;
+    disp(['step =',num2str(step1)]);
+    disp(datestr(now, 'yyyy-mm-dd HH:MM:SS'));
+    filename=[filelist(ii).folder,'\',filelist(ii).name];  
+
+    u_u=ncread(filename,'u');
+    v_v=ncread(filename,'v');
+    for iii=1:size(u_u,3)
+        u_m1(:,:,iii)=v2rho_2d(u_u(:,:,iii));
+        v_m1(:,:,iii)=u2rho_2d(v_v(:,:,iii));
+    end
+    u_m=u_m1(449:1648,100:1299,:);v_m=v_m1(449:1648,100:1299,:);
+    w0=ncread(filename,'w',[449 100 1 1],[1200 1200 inf inf]);
+    zeta=ncread(filename,'zeta');
+    z_rho1=zlevs(h,zeta,theta_s,theta_b,hc,N,'r',vtransform);
+    z_rho=z_rho1(41:70,449:1648,100:1299);
+    z_rho=permute(z_rho,[2 3 1]);
+
+    u=interp_model_z(u_m,x_rho,y_rho,z_rho,z_need);
+    v=interp_model_z(v_m,x_rho,y_rho,z_rho,z_need);
+    w=interp_model_z(w0,x_rho,y_rho,z_rho,z_need);
+    % 
+    % write nc file
+    ncwrite('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_notide_3layers_origin.nc','u',single(u),[1 1 1 step1]);
+    ncwrite('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_notide_3layers_origin.nc','v',single(v),[1 1 1 step1]);
+    ncwrite('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_notide_3layers_origin.nc','w',single(w),[1 1 1 step1]);
+
+end
+
+%% filt
+clear
+filename='I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_tide_3layers_origin.nc';
+x_rho=ncread(filename,'x_rho');y_rho=ncread(filename,'y_rho');
+lon_rho=ncread(filename,'lon_rho');lat_rho=ncread(filename,'lat_rho');
+depth=ncread(filename,'depth');
+
+% 
+nccreate('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_tide_3layers_filt_order4.nc','x_rho','Dimensions',{'x_rho',size(x_rho,1),'y_rho',size(x_rho,2)},'Datatype','single');
+nccreate('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_tide_3layers_filt_order4.nc','y_rho','Dimensions',{'x_rho',size(x_rho,1),'y_rho',size(x_rho,2)},'Datatype','single');
+ncwrite('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_tide_3layers_filt_order4.nc','x_rho',single(x_rho),[1 1]);
+ncwrite('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_tide_3layers_filt_order4.nc','y_rho',single(y_rho),[1 1]);
+nccreate('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_tide_3layers_filt_order4.nc','lon_rho','Dimensions',{'x_rho',size(x_rho,1),'y_rho',size(x_rho,2)},'Datatype','single');
+nccreate('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_tide_3layers_filt_order4.nc','lat_rho','Dimensions',{'x_rho',size(x_rho,1),'y_rho',size(x_rho,2)},'Datatype','single');
+ncwrite('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_tide_3layers_filt_order4.nc','lon_rho',single(lon_rho),[1 1]);
+ncwrite('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_tide_3layers_filt_order4.nc','lat_rho',single(lat_rho),[1 1]);
+nccreate('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_tide_3layers_filt_order4.nc','depth','Dimensions',{'depth',length(depth)},'Datatype','single');
+ncwrite('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_tide_3layers_filt_order4.nc','depth',single(depth),[1]);
+nccreate('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_tide_3layers_filt_order4.nc','u_lp','Dimensions',{'x_rho',size(x_rho,1),'y_rho',size(x_rho,2),'depth',length(depth),'t',695},'Datatype','single');
+nccreate('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_tide_3layers_filt_order4.nc','v_lp','Dimensions',{'x_rho',size(x_rho,1),'y_rho',size(x_rho,2),'depth',length(depth),'t',695},'Datatype','single');
+nccreate('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_tide_3layers_filt_order4.nc','w_lp','Dimensions',{'x_rho',size(x_rho,1),'y_rho',size(x_rho,2),'depth',length(depth),'t',695},'Datatype','single');
+nccreate('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_tide_3layers_filt_order4.nc','u_hp','Dimensions',{'x_rho',size(x_rho,1),'y_rho',size(x_rho,2),'depth',length(depth),'t',695},'Datatype','single');
+nccreate('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_tide_3layers_filt_order4.nc','v_hp','Dimensions',{'x_rho',size(x_rho,1),'y_rho',size(x_rho,2),'depth',length(depth),'t',695},'Datatype','single');
+nccreate('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_tide_3layers_filt_order4.nc','w_hp','Dimensions',{'x_rho',size(x_rho,1),'y_rho',size(x_rho,2),'depth',length(depth),'t',695},'Datatype','single');
+
+for kk = 1:length(depth)
+    disp(kk);
+    disp(datestr(now, 'yyyy-mm-dd HH:MM:SS'));
+    for ii = 1:5
+        for jj = 1:5
+            ist = 240*(ii-1) + 1;
+            jst = 240*(jj-1) + 1;
+            
+            u_use = squeeze(ncread(filename, 'u', [ist jst kk 1], [240 240 1 inf]));
+            v_use = squeeze(ncread(filename, 'v', [ist jst kk 1], [240 240 1 inf]));
+            w_use = squeeze(ncread(filename, 'w', [ist jst kk 1], [240 240 1 inf]));
+            nt = size(u_use, 3);
+            
+            % 预分配（用 NaN，这样陆地点自动就是 NaN）
+            u_lp = NaN(240, 240, nt, 'single');
+            v_lp = NaN(240, 240, nt, 'single');
+            w_lp = NaN(240, 240, nt, 'single');
+
+            for mm = 1:240
+                parfor nn = 1:240
+                    u_ts = squeeze(u_use(mm, nn, :));
+                    v_ts = squeeze(v_use(mm, nn, :));
+                    w_ts = squeeze(w_use(mm, nn, :));
+                    
+                    if all(isnan(u_ts))
+                        % 陆地点，跳过，保持 NaN
+                        u_lp(mm, nn, :) = NaN;
+                        v_lp(mm, nn, :) = NaN;
+                        w_lp(mm, nn, :) = NaN;
+                    else
+                        u_lp(mm, nn, :) = filt1('lp', u_ts, 'fs', 1, 'fc', 1/48,'order',4);
+                        v_lp(mm, nn, :) = filt1('lp', v_ts, 'fs', 1, 'fc', 1/48,'order',4);
+                        w_lp(mm, nn, :) = filt1('lp', w_ts, 'fs', 1, 'fc', 1/48,'order',4);
+                    end
+                end
+            end
+            
+            u_hp = single(u_use) - u_lp;
+            v_hp = single(v_use) - v_lp;
+            w_hp = single(w_use) - w_lp;
+
+            % reshape 回 4D 再写入
+            ncwrite('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_tide_3layers_filt_order4.nc', 'u_lp', reshape(u_lp, [240,240,1,nt]), [ist jst kk 1]);
+            ncwrite('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_tide_3layers_filt_order4.nc', 'v_lp', reshape(v_lp, [240,240,1,nt]), [ist jst kk 1]);
+            ncwrite('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_tide_3layers_filt_order4.nc', 'w_lp', reshape(w_lp, [240,240,1,nt]), [ist jst kk 1]);
+            ncwrite('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_tide_3layers_filt_order4.nc', 'u_hp', reshape(u_hp, [240,240,1,nt]), [ist jst kk 1]);
+            ncwrite('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_tide_3layers_filt_order4.nc', 'v_hp', reshape(v_hp, [240,240,1,nt]), [ist jst kk 1]);
+            ncwrite('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_tide_3layers_filt_order4.nc', 'w_hp', reshape(w_hp, [240,240,1,nt]), [ist jst kk 1]);
+        end
+    end
+end
+
+
+
+clear
+filename='I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_notide_3layers_origin.nc';
+x_rho=ncread(filename,'x_rho');y_rho=ncread(filename,'y_rho');
+lon_rho=ncread(filename,'lon_rho');lat_rho=ncread(filename,'lat_rho');
+depth=ncread(filename,'depth');
+
+% 
+nccreate('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_notide_3layers_filt_order4.nc','x_rho','Dimensions',{'x_rho',size(x_rho,1),'y_rho',size(x_rho,2)},'Datatype','single');
+nccreate('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_notide_3layers_filt_order4.nc','y_rho','Dimensions',{'x_rho',size(x_rho,1),'y_rho',size(x_rho,2)},'Datatype','single');
+ncwrite('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_notide_3layers_filt_order4.nc','x_rho',single(x_rho),[1 1]);
+ncwrite('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_notide_3layers_filt_order4.nc','y_rho',single(y_rho),[1 1]);
+nccreate('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_notide_3layers_filt_order4.nc','lon_rho','Dimensions',{'x_rho',size(x_rho,1),'y_rho',size(x_rho,2)},'Datatype','single');
+nccreate('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_notide_3layers_filt_order4.nc','lat_rho','Dimensions',{'x_rho',size(x_rho,1),'y_rho',size(x_rho,2)},'Datatype','single');
+ncwrite('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_notide_3layers_filt_order4.nc','lon_rho',single(lon_rho),[1 1]);
+ncwrite('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_notide_3layers_filt_order4.nc','lat_rho',single(lat_rho),[1 1]);
+nccreate('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_notide_3layers_filt_order4.nc','depth','Dimensions',{'depth',length(depth)},'Datatype','single');
+ncwrite('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_notide_3layers_filt_order4.nc','depth',single(depth),[1]);
+nccreate('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_notide_3layers_filt_order4.nc','u_lp','Dimensions',{'x_rho',size(x_rho,1),'y_rho',size(x_rho,2),'depth',length(depth),'t',695},'Datatype','single');
+nccreate('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_notide_3layers_filt_order4.nc','v_lp','Dimensions',{'x_rho',size(x_rho,1),'y_rho',size(x_rho,2),'depth',length(depth),'t',695},'Datatype','single');
+nccreate('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_notide_3layers_filt_order4.nc','w_lp','Dimensions',{'x_rho',size(x_rho,1),'y_rho',size(x_rho,2),'depth',length(depth),'t',695},'Datatype','single');
+nccreate('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_notide_3layers_filt_order4.nc','u_hp','Dimensions',{'x_rho',size(x_rho,1),'y_rho',size(x_rho,2),'depth',length(depth),'t',695},'Datatype','single');
+nccreate('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_notide_3layers_filt_order4.nc','v_hp','Dimensions',{'x_rho',size(x_rho,1),'y_rho',size(x_rho,2),'depth',length(depth),'t',695},'Datatype','single');
+nccreate('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_notide_3layers_filt_order4.nc','w_hp','Dimensions',{'x_rho',size(x_rho,1),'y_rho',size(x_rho,2),'depth',length(depth),'t',695},'Datatype','single');
+
+for kk = 1:length(depth)
+    disp(kk);
+    disp(datestr(now, 'yyyy-mm-dd HH:MM:SS'));
+    for ii = 1:5
+        for jj = 1:5
+            ist = 240*(ii-1) + 1;
+            jst = 240*(jj-1) + 1;
+            
+            u_use = squeeze(ncread(filename, 'u', [ist jst kk 1], [240 240 1 inf]));
+            v_use = squeeze(ncread(filename, 'v', [ist jst kk 1], [240 240 1 inf]));
+            w_use = squeeze(ncread(filename, 'w', [ist jst kk 1], [240 240 1 inf]));
+            nt = size(u_use, 3);
+            
+            % 预分配（用 NaN，这样陆地点自动就是 NaN）
+            u_lp = NaN(240, 240, nt, 'single');
+            v_lp = NaN(240, 240, nt, 'single');
+            w_lp = NaN(240, 240, nt, 'single');
+
+            for mm = 1:240
+                parfor nn = 1:240
+                    u_ts = squeeze(u_use(mm, nn, :));
+                    v_ts = squeeze(v_use(mm, nn, :));
+                    w_ts = squeeze(w_use(mm, nn, :));
+                    
+                    if all(isnan(u_ts))
+                        % 陆地点，跳过，保持 NaN
+                        u_lp(mm, nn, :) = NaN;
+                        v_lp(mm, nn, :) = NaN;
+                        w_lp(mm, nn, :) = NaN;
+                    else
+                        u_lp(mm, nn, :) = filt1('lp', u_ts, 'fs', 1, 'fc', 1/48,'order',4);
+                        v_lp(mm, nn, :) = filt1('lp', v_ts, 'fs', 1, 'fc', 1/48,'order',4);
+                        w_lp(mm, nn, :) = filt1('lp', w_ts, 'fs', 1, 'fc', 1/48,'order',4);
+                    end
+                end
+            end
+            
+            u_hp = single(u_use) - u_lp;
+            v_hp = single(v_use) - v_lp;
+            w_hp = single(w_use) - w_lp;
+
+            % reshape 回 4D 再写入
+            ncwrite('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_notide_3layers_filt_order4.nc', 'u_lp', reshape(u_lp, [240,240,1,nt]), [ist jst kk 1]);
+            ncwrite('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_notide_3layers_filt_order4.nc', 'v_lp', reshape(v_lp, [240,240,1,nt]), [ist jst kk 1]);
+            ncwrite('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_notide_3layers_filt_order4.nc', 'w_lp', reshape(w_lp, [240,240,1,nt]), [ist jst kk 1]);
+            ncwrite('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_notide_3layers_filt_order4.nc', 'u_hp', reshape(u_hp, [240,240,1,nt]), [ist jst kk 1]);
+            ncwrite('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_notide_3layers_filt_order4.nc', 'v_hp', reshape(v_hp, [240,240,1,nt]), [ist jst kk 1]);
+            ncwrite('I:\NCS_wu_0.5km_13m_15m_17m_all\NCS_wu_0.5km_15m_notide_3layers_filt_order4.nc', 'w_hp', reshape(w_hp, [240,240,1,nt]), [ist jst kk 1]);
+        end
+    end
+end
+%% filt stress
