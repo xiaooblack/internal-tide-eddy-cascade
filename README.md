@@ -1,6 +1,6 @@
 # internal-tide-eddy-cascade
 Code for analyzing internal tide–eddy interactions and forward energy cascades in oceanic flows.
-Code and analysis for the paper "Internal tide-eddy interactions enhance the forward energy cascade of oceanic flows".
+Code and analysis for the paper "Internal tide-eddy interactions enhance the forward energy cascade of eddy flows".
 
 This repository contains the model configuration files, parallel structure-function calculation codes, data preprocessing scripts, analysis functions, and figure-generation scripts used in the study. The main workflow is designed to quantify how internal tide-eddy interactions modify flow structures and enhance the forward kinetic energy cascade in oceanic flows.
 
