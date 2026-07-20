@@ -121,8 +121,6 @@ for ii=1:m1
     drifter(ii).lat=ncread(filename,'lat');
     drifter(ii).u=ncread(filename,'u');
     drifter(ii).v=ncread(filename,'v');
-    drifter(ii).u=filt1('lp',drifter(ii).u,'Ts',15,'Tc',120);
-    drifter(ii).v=filt1('lp',drifter(ii).v,'Ts',15,'Tc',120);
     time_start_list(ii)=drifter(ii).time(1);
     time_end_list(ii)=drifter(ii).time(end);
 end
@@ -158,7 +156,7 @@ N_drifters=sum(counts_drifters,1);
 
 % 24h block 每96个时刻合成一个
 
-N = 48;% 每组元素个数
+N = 96;% 每组元素个数
 n = ceil(size(sum_DLL_drifters,1) / N);% 总组数（包括可能的不完整组）
 % 预分配存储各组和
 sum_DLL_block = zeros(n, length(r));
