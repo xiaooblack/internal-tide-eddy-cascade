@@ -1,5 +1,11 @@
 # Internal Tide-Eddy Cascade
 
+## Observational data availability
+
+Due to the sensitivity of the observational data, the drifter and ADCP data shared in this repository have been coarsened in space and time, with reduced coordinate and velocity precision. The coarsened files are available in [observations coarse data.zip](observations%20coarse%20data.zip).
+
+**To request access to the original observational data used in the paper, please contact the paper's corresponding author.**
+
 Code and analysis for the paper "Internal tide-eddy interactions enhance forward energy cascade of eddy flows from mesoscale to submesoscale".
 
 This repository contains model experiment configurations, model-output post-processing scripts, parallel structure-function calculation codes, preprocessing scripts, analysis functions, and figure-generation scripts used in the study. The workflow is designed to quantify how internal tide-eddy interactions modify flow structures and enhance the forward kinetic energy cascade in oceanic flows.
@@ -100,3 +106,4 @@ The general workflow of this repository is:
 ## Notes
 
 The codes in this repository were developed for the analyses presented in the accompanying manuscript. Some scripts may require users to modify file paths, input file names, environment settings, or job-submission settings before running them on a different machine or cluster.
+
