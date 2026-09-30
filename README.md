@@ -8,7 +8,7 @@ Due to the sensitivity of the observational data, the drifter and ADCP data shar
 
 **corresponding author: Zhiyou Jing**
 
-**Email:jingzhiyou@scsio.ac.cn**
+**Email: jingzhiyou@scsio.ac.cn**
 
 Code and analysis for the paper "Internal tide-eddy interactions enhance forward energy cascade of eddy flows from mesoscale to submesoscale".
 
@@ -110,4 +110,6 @@ The general workflow of this repository is:
 ## Notes
 
 The codes in this repository were developed for the analyses presented in the accompanying manuscript. Some scripts may require users to modify file paths, input file names, environment settings, or job-submission settings before running them on a different machine or cluster.
+
+If you have any questions about the code or the associated publication, please feel free to contact me at **wuboyan23@mails.ucas.ac.cn**
 
