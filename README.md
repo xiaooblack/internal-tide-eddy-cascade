@@ -4,9 +4,11 @@
 
 Due to the sensitivity of the observational data, the drifter and ADCP data shared in this repository have been coarsened in space and time, with reduced coordinate and velocity precision. The coarsened files are available in [observations coarse data.zip](observations%20coarse%20data.zip).
 
-**To request access to the original observational data used in the paper, please contact the paper's corresponding author.**.
-**corresponding author: Zhiyou Jing**.
-**Email:jingzhiyou@scsio.ac.cn**.
+**To request access to the original observational data used in the paper, please contact the paper's corresponding author.**
+
+**corresponding author: Zhiyou Jing**
+
+**Email:jingzhiyou@scsio.ac.cn**
 
 Code and analysis for the paper "Internal tide-eddy interactions enhance forward energy cascade of eddy flows from mesoscale to submesoscale".
 
